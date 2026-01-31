@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../data/models/book_model.dart';
 import '../screens/screens.dart';
 
 /// App router configuration using go_router
@@ -40,7 +41,10 @@ class AppRouter {
       GoRoute(
         path: RouteNames.addBook,
         name: 'addBook',
-        builder: (context, state) => const AddBookScreen(),
+        builder: (context, state) {
+          final initialBook = state.extra as BookModel?;
+          return AddBookScreen(initialBook: initialBook);
+        },
       ),
 
       // Edit Book Screen
@@ -57,7 +61,7 @@ class AppRouter {
       GoRoute(
         path: RouteNames.scanBook,
         name: 'scanBook',
-        builder: (context, state) => const ScanBookScreen(),
+        builder: (context, state) => const ScannerScreen(),
       ),
 
       // Statistics Screen

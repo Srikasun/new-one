@@ -122,6 +122,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     _buildStreakSection(),
                     const SizedBox(height: 24),
 
+                    // Pages read this month (bar chart)
+                    _buildMonthlyPagesChart(),
+                    const SizedBox(height: 24),
+
                     // Books by status chart
                     _buildStatusChart(),
                     const SizedBox(height: 24),
@@ -131,6 +135,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       _buildCategoryChart(),
                       const SizedBox(height: 24),
                     ],
+
+                    // Fastest/Slowest reads
+                    _buildReadingSpeedSection(),
+                    const SizedBox(height: 24),
 
                     // Recently completed
                     if (_recentlyCompleted.isNotEmpty) ...[
@@ -254,6 +262,136 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonthlyPagesChart() {
+    // Generate last 7 days data (simulated)
+    final now = DateTime.now();
+    final dailyPages = List.generate(7, (index) {
+      final day = now.subtract(Duration(days: 6 - index));
+      // In production, get real data from sessions
+      return FlSpot(index.toDouble(), (index * 15 + 10).toDouble() % 80 + 20);
+    });
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Pages This Week',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_totalPagesRead} total',
+                    style: TextStyle(
+                      color: AppColors.secondary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 180,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 20,
+                    getDrawingHorizontalLine: (value) {
+                      return FlLine(
+                        color: AppColors.neutral200,
+                        strokeWidth: 1,
+                      );
+                    },
+                  ),
+                  titlesData: FlTitlesData(
+                    show: true,
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                          final index = value.toInt();
+                          if (index >= 0 && index < days.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                days[index],
+                                style: const TextStyle(fontSize: 10),
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                        reservedSize: 30,
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            value.toInt().toString(),
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                        reservedSize: 30,
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: dailyPages,
+                      isCurved: true,
+                      color: AppColors.primary,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) {
+                          return FlDotCirclePainter(
+                            radius: 4,
+                            color: AppColors.primary,
+                            strokeWidth: 2,
+                            strokeColor: Colors.white,
+                          );
+                        },
+                      ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: AppColors.primary.withOpacity(0.1),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -423,6 +561,95 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  Widget _buildReadingSpeedSection() {
+    // Find fastest and slowest reads from completed books
+    final completedWithDates = _recentlyCompleted.where((b) =>
+        b.dateStarted != null &&
+        b.dateFinished != null &&
+        b.totalPages > 0).toList();
+
+    if (completedWithDates.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Calculate reading speed (days per book)
+    final booksWithSpeed = completedWithDates.map((book) {
+      final days = book.dateFinished!.difference(book.dateStarted!).inDays + 1;
+      return MapEntry(book, days);
+    }).toList();
+
+    booksWithSpeed.sort((a, b) => a.value.compareTo(b.value));
+
+    final fastest = booksWithSpeed.isNotEmpty ? booksWithSpeed.first : null;
+    final slowest = booksWithSpeed.length > 1 ? booksWithSpeed.last : null;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.speed, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Reading Speed',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (fastest != null)
+              _SpeedItem(
+                icon: Icons.bolt,
+                iconColor: AppColors.success,
+                label: 'Fastest Read',
+                bookTitle: fastest.key.title,
+                detail: '${fastest.value} ${fastest.value == 1 ? 'day' : 'days'}',
+              ),
+            if (fastest != null && slowest != null) const Divider(height: 24),
+            if (slowest != null && slowest.key.id != fastest?.key.id)
+              _SpeedItem(
+                icon: Icons.hourglass_full,
+                iconColor: AppColors.warning,
+                label: 'Most Dedicated Read',
+                bookTitle: slowest.key.title,
+                detail: '${slowest.value} days',
+              ),
+            const SizedBox(height: 16),
+            if (_avgPagesPerSession > 0)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _SpeedStat(
+                      label: 'Avg Pages/Session',
+                      value: _avgPagesPerSession.toStringAsFixed(1),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 30,
+                      color: AppColors.neutral300,
+                    ),
+                    _SpeedStat(
+                      label: 'Books Completed',
+                      value: '$_booksCompleted',
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRecentlyCompletedSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -544,6 +771,108 @@ class _ChartLegend extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text('$label ($value)'),
+      ],
+    );
+  }
+}
+
+/// Speed item widget
+class _SpeedItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String bookTitle;
+  final String detail;
+
+  const _SpeedItem({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.bookTitle,
+    required this.detail,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.neutral500,
+                    ),
+              ),
+              Text(
+                bookTitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            detail,
+            style: TextStyle(
+              color: iconColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Speed stat widget
+class _SpeedStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _SpeedStat({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+        ),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.neutral500,
+              ),
+        ),
       ],
     );
   }

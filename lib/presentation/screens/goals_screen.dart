@@ -645,25 +645,68 @@ class _GoalCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppColors.neutral200,
+            // Progress with animation
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: progress),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return LinearProgressIndicator(
+                  value: value,
+                  backgroundColor: AppColors.neutral200,
+                  valueColor: AlwaysStoppedAnimation(
+                    goal.isCompleted ? AppColors.success : AppColors.primary,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${goal.currentValue} / ${goal.targetValue} ${goal.type.unit}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    Text(
+                      '${goal.currentValue} / ${goal.targetValue} ${goal.type.unit}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    if (goal.isCompleted) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.success,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.celebration, color: Colors.white, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              'Completed!',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ],
+                  ],
                 ),
-                if (goal.deadline != null)
+                if (goal.deadline != null && !goal.isCompleted)
                   Text(
                     'Due: ${dateFormat.format(goal.deadline!)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.neutral600,
+                          color: goal.isOverdue ? AppColors.error : AppColors.neutral600,
                         ),
                   ),
               ],

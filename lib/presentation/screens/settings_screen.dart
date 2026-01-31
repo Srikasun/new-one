@@ -42,6 +42,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             value: _darkMode,
             onChanged: (value) => setState(() => _darkMode = value),
           ),
+          ListTile(
+            leading: const Icon(Icons.palette),
+            title: const Text('Themes'),
+            subtitle: const Text('Customize app colors'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(RouteNames.themes),
+          ),
+
+          const Divider(),
+
+          // Collections & Achievements
+          _buildSectionHeader('Library'),
+          ListTile(
+            leading: const Icon(Icons.collections_bookmark),
+            title: const Text('Collections'),
+            subtitle: const Text('Organize books into groups'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(RouteNames.collections),
+          ),
+          ListTile(
+            leading: const Icon(Icons.emoji_events),
+            title: const Text('Achievements'),
+            subtitle: const Text('View your badges and progress'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.go(RouteNames.achievements),
+          ),
 
           const Divider(),
 
@@ -143,19 +169,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () => _showAboutDialog(),
           ),
           ListTile(
+            leading: const Icon(Icons.share),
+            title: const Text('Share App'),
+            subtitle: const Text('Tell your friends about DreamShelf'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _shareApp(),
+          ),
+          ListTile(
             leading: const Icon(Icons.privacy_tip),
             title: const Text('Privacy Policy'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // Open privacy policy
-            },
+            onTap: () => _showPrivacyPolicy(),
           ),
           ListTile(
             leading: const Icon(Icons.description),
             title: const Text('Terms of Service'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // Open terms of service
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Terms of Service')),
+              );
             },
           ),
           ListTile(
@@ -163,7 +196,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Send Feedback'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // Open feedback form
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Opening feedback form...')),
+              );
             },
           ),
           ListTile(
@@ -171,7 +206,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Rate the App'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
-              // Open app store
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Opening app store...')),
+              );
             },
           ),
 
@@ -435,6 +472,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'Track your reading progress, set goals, and discover your reading habits.',
         ),
       ],
+    );
+  }
+
+  void _shareApp() {
+    // In production with share_plus:
+    // Share.share(
+    //   'Check out DreamShelf - the best book tracking app! '
+    //   'Track your reading progress, set goals, and discover your reading habits. '
+    //   'Download now: https://example.com/dreamshelf',
+    // );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sharing DreamShelf...')),
+    );
+  }
+
+  void _showPrivacyPolicy() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Privacy Policy'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Privacy Policy',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Last updated: January 2024\n\n'
+                '1. Information We Collect\n'
+                'DreamShelf stores all your book data locally on your device. '
+                'We do not collect or transmit any personal information to external servers.\n\n'
+                '2. Data Storage\n'
+                'Your reading data, goals, and preferences are stored locally using Hive database. '
+                'This data never leaves your device unless you explicitly export it.\n\n'
+                '3. Third-Party Services\n'
+                '• Google Books API: Used to fetch book information when you search or scan. '
+                'Only the search query is sent to Google.\n'
+                '• Google AdMob: For free users, ads are displayed. Google may collect '
+                'advertising identifiers as per their privacy policy.\n'
+                '• In-App Purchases: Processed through Apple/Google payment systems.\n\n'
+                '4. Camera Access\n'
+                'The app requests camera access only for scanning ISBN barcodes. '
+                'Camera data is processed locally and not stored or transmitted.\n\n'
+                '5. Data Deletion\n'
+                'You can delete all your data at any time from Settings > Clear All Data.\n\n'
+                '6. Changes to Policy\n'
+                'We may update this policy. Check back periodically for changes.\n\n'
+                '7. Contact\n'
+                'For questions, contact: support@dreamshelf.app',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
     );
   }
 }

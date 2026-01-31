@@ -20,6 +20,13 @@ class AppRouter {
         builder: (context, state) => const SplashScreen(),
       ),
 
+      // Onboarding Screen
+      GoRoute(
+        path: RouteNames.onboarding,
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
       // Home Screen
       GoRoute(
         path: RouteNames.home,
@@ -97,6 +104,27 @@ class AppRouter {
         path: RouteNames.search,
         name: 'search',
         builder: (context, state) => const SearchScreen(),
+      ),
+
+      // Collections Screen (Premium)
+      GoRoute(
+        path: RouteNames.collections,
+        name: 'collections',
+        builder: (context, state) => const CollectionsScreen(),
+      ),
+
+      // Achievements Screen
+      GoRoute(
+        path: RouteNames.achievements,
+        name: 'achievements',
+        builder: (context, state) => const AchievementsScreen(),
+      ),
+
+      // Themes Screen (Premium)
+      GoRoute(
+        path: RouteNames.themes,
+        name: 'themes',
+        builder: (context, state) => const ThemesScreen(),
       ),
     ],
 
@@ -183,6 +211,26 @@ class AppRouter {
   /// Navigate to search
   static void goToSearch(BuildContext context) {
     context.go(RouteNames.search);
+  }
+
+  /// Navigate to collections
+  static void goToCollections(BuildContext context) {
+    context.go(RouteNames.collections);
+  }
+
+  /// Navigate to achievements
+  static void goToAchievements(BuildContext context) {
+    context.go(RouteNames.achievements);
+  }
+
+  /// Navigate to themes
+  static void goToThemes(BuildContext context) {
+    context.go(RouteNames.themes);
+  }
+
+  /// Navigate to onboarding
+  static void goToOnboarding(BuildContext context) {
+    context.go(RouteNames.onboarding);
   }
 
   /// Go back

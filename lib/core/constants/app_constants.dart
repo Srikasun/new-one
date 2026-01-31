@@ -89,6 +89,8 @@ class HiveConstants {
   static const String sessionsBox = 'reading_sessions_box';
   static const String goalsBox = 'user_goals_box';
   static const String preferencesBox = 'user_preferences_box';
+  static const String collectionsBox = 'collections_box';
+  static const String achievementsBox = 'achievements_box';
 
   // Type Adapter IDs
   static const int bookTypeId = 0;
@@ -98,6 +100,10 @@ class HiveConstants {
   static const int bookStatusTypeId = 4;
   static const int goalTypeTypeId = 5;
   static const int appThemeModeTypeId = 6;
+  static const int collectionTypeId = 7;
+  static const int achievementTypeId = 8;
+  static const int achievementTypeTypeId = 9;
+  static const int appThemeStyleTypeId = 10;
 }
 
 /// App Configuration
@@ -126,6 +132,7 @@ class RouteNames {
   RouteNames._();
 
   static const String splash = '/';
+  static const String onboarding = '/onboarding';
   static const String home = '/home';
   static const String bookDetails = '/book/:id';
   static const String addBook = '/add-book';
@@ -136,4 +143,8 @@ class RouteNames {
   static const String settings = '/settings';
   static const String premium = '/premium';
   static const String search = '/search';
+  static const String collections = '/collections';
+  static const String collectionDetails = '/collection/:id';
+  static const String achievements = '/achievements';
+  static const String themes = '/themes';
 }

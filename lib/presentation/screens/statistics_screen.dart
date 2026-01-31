@@ -271,12 +271,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildMonthlyPagesChart() {
-    // Generate last 7 days data (simulated)
-    final now = DateTime.now();
+    // Generate last 7 days data
+    // In production, this would fetch actual reading session data from the repository
+    // For now, we show simulated data to demonstrate the chart functionality
     final dailyPages = List.generate(7, (index) {
-      final day = now.subtract(Duration(days: 6 - index));
-      // In production, get real data from sessions
-      return FlSpot(index.toDouble(), (index * 15 + 10).toDouble() % 80 + 20);
+      // Simulated daily reading pages: varies between 20-80 pages per day
+      // The formula creates a wave pattern for visual demonstration
+      const basePagesPerDay = 40.0;
+      const variationRange = 30.0;
+      final variation = (index * 17) % 60 - 30; // Deterministic variation
+      final pages = basePagesPerDay + variation.clamp(-variationRange, variationRange);
+      return FlSpot(index.toDouble(), pages);
     });
 
     return Card(

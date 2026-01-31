@@ -401,7 +401,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
                         context.read<AdBloc>().add(const LoadRewardedAd());
                       },
             icon: Icon(
-              isAdReading ? Icons.play_circle_outline : Icons.refresh,
+              isAdReady ? Icons.play_circle_outline : Icons.refresh,
             ),
             label: Text(
               isAdReady
@@ -421,8 +421,6 @@ class _PremiumScreenState extends State<PremiumScreen> {
       },
     );
   }
-  
-  bool get isAdReading => false;
 }
 
 /// Feature item widget

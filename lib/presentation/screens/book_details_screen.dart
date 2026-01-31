@@ -8,9 +8,11 @@ import '../../core/themes/app_colors.dart';
 import '../../data/models/book_model.dart';
 import '../../data/models/reading_session_model.dart';
 import '../../data/repositories/session_repository.dart';
+import '../bloc/ad/ad_bloc.dart';
 import '../bloc/book/book_bloc.dart';
 import '../bloc/session/session_bloc.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/monetization/monetization.dart';
 
 /// Screen showing detailed information about a book
 class BookDetailsScreen extends StatefulWidget {
@@ -95,59 +97,67 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
   Widget _buildContent(BuildContext context, BookModel book) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // Hero header with cover
-          _buildSliverAppBar(context, book),
+      body: Column(
+        children: [
+          Expanded(
+            child: CustomScrollView(
+              slivers: [
+                // Hero header with cover
+                _buildSliverAppBar(context, book),
 
-          // Book info
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title and Author
-                  _buildHeader(context, book),
-                  const SizedBox(height: 24),
+                // Book info
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title and Author
+                        _buildHeader(context, book),
+                        const SizedBox(height: 24),
 
-                  // Progress section
-                  _buildProgressSection(context, book),
-                  const SizedBox(height: 24),
+                        // Progress section
+                        _buildProgressSection(context, book),
+                        const SizedBox(height: 24),
 
-                  // Quick actions
-                  _buildQuickActions(context, book),
-                  const SizedBox(height: 24),
+                        // Quick actions
+                        _buildQuickActions(context, book),
+                        const SizedBox(height: 24),
 
-                  // Details section
-                  _buildDetailsSection(context, book),
-                  const SizedBox(height: 24),
+                        // Details section
+                        _buildDetailsSection(context, book),
+                        const SizedBox(height: 24),
 
-                  // Description
-                  if (book.description != null) ...[
-                    _buildDescriptionSection(context, book),
-                    const SizedBox(height: 24),
-                  ],
+                        // Description
+                        if (book.description != null) ...[
+                          _buildDescriptionSection(context, book),
+                          const SizedBox(height: 24),
+                        ],
 
-                  // Categories
-                  if (book.categories.isNotEmpty) ...[
-                    _buildCategoriesSection(context, book),
-                    const SizedBox(height: 24),
-                  ],
+                        // Categories
+                        if (book.categories.isNotEmpty) ...[
+                          _buildCategoriesSection(context, book),
+                          const SizedBox(height: 24),
+                        ],
 
-                  // Notes
-                  if (book.notes != null) ...[
-                    _buildNotesSection(context, book),
-                    const SizedBox(height: 24),
-                  ],
+                        // Notes
+                        if (book.notes != null) ...[
+                          _buildNotesSection(context, book),
+                          const SizedBox(height: 24),
+                        ],
 
-                  // Reading sessions
-                  _buildSessionsSection(context, book),
-                  const SizedBox(height: 100),
-                ],
-              ),
+                        // Reading sessions
+                        _buildSessionsSection(context, book),
+                        const SizedBox(height: 100),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+          // Banner ad for free users
+          const BannerAdWidget(),
         ],
       ),
       floatingActionButton: _buildFAB(context, book),
@@ -431,37 +441,77 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _buildQuickActions(BuildContext context, BookModel book) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.play_arrow,
-            label: 'Start Reading',
-            color: AppColors.secondary,
-            onTap: () => _startReadingSession(context, book),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.play_arrow,
+                label: 'Start Reading',
+                color: AppColors.secondary,
+                onTap: () => _startReadingSession(context, book),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.share,
+                label: 'Share',
+                color: AppColors.info,
+                onTap: () {
+                  // Share functionality
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _ActionButton(
+                icon: Icons.edit,
+                label: 'Edit',
+                color: AppColors.accent,
+                onTap: () => context.go('/edit-book/${book.id}'),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.share,
-            label: 'Share',
-            color: AppColors.info,
-            onTap: () {
-              // Share functionality
-            },
+        if (book.status != BookStatus.completed) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _markAsComplete(context, book),
+              icon: const Icon(Icons.check_circle),
+              label: const Text('Mark as Completed'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.success,
+                side: BorderSide(color: AppColors.success),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _ActionButton(
-            icon: Icons.edit,
-            label: 'Edit',
-            color: AppColors.accent,
-            onTap: () => context.go('/edit-book/${book.id}'),
-          ),
-        ),
+        ],
       ],
+    );
+  }
+
+  void _markAsComplete(BuildContext context, BookModel book) {
+    final updatedBook = book.copyWith(
+      status: BookStatus.completed,
+      currentPage: book.totalPages,
+      dateFinished: DateTime.now(),
+    );
+    
+    context.read<BookBloc>().add(UpdateBook(updatedBook));
+    
+    // Trigger interstitial ad after completing a book
+    context.read<AdBloc>().add(const BookCompleted());
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Congratulations on finishing this book! 🎉'),
+        backgroundColor: AppColors.success,
+      ),
     );
   }
 

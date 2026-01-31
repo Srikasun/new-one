@@ -18,6 +18,11 @@ class PurchaseLoading extends PurchaseState {
   const PurchaseLoading();
 }
 
+/// Restore in progress
+class RestoreInProgress extends PurchaseState {
+  const RestoreInProgress();
+}
+
 /// Products loaded successfully
 class ProductsLoaded extends PurchaseState {
   final List<ProductDetails> products;
@@ -49,11 +54,16 @@ class PurchaseSuccess extends PurchaseState {
 
   const PurchaseSuccess({
     required this.productId,
-    this.message = 'Purchase successful!',
+    this.message = 'Purchase successful! Thank you for upgrading to Premium.',
   });
 
   @override
   List<Object?> get props => [productId, message];
+}
+
+/// Purchase canceled by user
+class PurchaseCanceled extends PurchaseState {
+  const PurchaseCanceled();
 }
 
 /// Purchases restored
@@ -82,6 +92,22 @@ class PremiumStatusChecked extends PurchaseState {
 
   @override
   List<Object?> get props => [isPremium, expiryDate];
+}
+
+/// Book limit checked for free users
+class BookLimitChecked extends PurchaseState {
+  final bool isLimitReached;
+  final int currentCount;
+  final int maxBooks;
+
+  const BookLimitChecked({
+    required this.isLimitReached,
+    required this.currentCount,
+    required this.maxBooks,
+  });
+
+  @override
+  List<Object?> get props => [isLimitReached, currentCount, maxBooks];
 }
 
 /// Purchase error

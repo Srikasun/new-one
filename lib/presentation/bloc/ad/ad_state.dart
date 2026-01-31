@@ -13,6 +13,11 @@ class AdInitial extends AdState {
   const AdInitial();
 }
 
+/// Ads are initialized and ready
+class AdsInitialized extends AdState {
+  const AdsInitialized();
+}
+
 /// Ads are being loaded
 class AdLoading extends AdState {
   const AdLoading();
@@ -33,9 +38,19 @@ class BannerAdReady extends AdState {
   List<Object?> get props => [bannerAd];
 }
 
+/// Banner ad is disposed
+class BannerAdDisposed extends AdState {
+  const BannerAdDisposed();
+}
+
 /// Interstitial ad is ready
 class InterstitialAdReady extends AdState {
   const InterstitialAdReady();
+}
+
+/// Interstitial ad was closed
+class InterstitialAdClosed extends AdState {
+  const InterstitialAdClosed();
 }
 
 /// Rewarded ad is ready
@@ -65,6 +80,33 @@ class RewardReceived extends AdState {
 
   @override
   List<Object?> get props => [amount, type];
+}
+
+/// Temporary premium granted
+class TemporaryPremiumGranted extends AdState {
+  final DateTime expiresAt;
+
+  const TemporaryPremiumGranted({required this.expiresAt});
+
+  @override
+  List<Object?> get props => [expiresAt];
+}
+
+/// Temporary premium is currently active
+class TemporaryPremiumActive extends AdState {
+  final DateTime expiresAt;
+
+  const TemporaryPremiumActive({required this.expiresAt});
+
+  Duration get remainingTime => expiresAt.difference(DateTime.now());
+
+  @override
+  List<Object?> get props => [expiresAt];
+}
+
+/// Temporary premium has expired
+class TemporaryPremiumExpired extends AdState {
+  const TemporaryPremiumExpired();
 }
 
 /// Ad failed to load

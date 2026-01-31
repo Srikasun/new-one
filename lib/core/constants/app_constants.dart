@@ -54,6 +54,10 @@ class PurchaseConstants {
   static const String premiumYearlyId = 'dreamshelf_premium_yearly';
   static const String premiumLifetimeId = 'dreamshelf_premium_lifetime';
 
+  /// One-time purchase premium (main product)
+  static const String premiumOneTimeId = 'dreamshelf_premium';
+  static const String premiumOneTimePrice = '\$3.99';
+
   /// Consumable product IDs
   static const String removeAdsId = 'dreamshelf_remove_ads';
 
@@ -66,8 +70,15 @@ class PurchaseConstants {
   /// List of all non-consumable IDs
   static const List<String> nonConsumableIds = [
     premiumLifetimeId,
+    premiumOneTimeId,
     removeAdsId,
   ];
+
+  /// Free tier book limit
+  static const int freeUserBookLimit = 20;
+
+  /// Temporary premium duration (from watching rewarded ad)
+  static const Duration temporaryPremiumDuration = Duration(hours: 24);
 }
 
 /// Hive Box Names

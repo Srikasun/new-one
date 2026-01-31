@@ -8,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/themes/app_colors.dart';
 import '../../data/models/book_model.dart';
 import '../../data/services/google_books_service.dart';
+import '../bloc/ad/ad_bloc.dart';
 import '../bloc/book/book_bloc.dart';
 import '../widgets/common_widgets.dart';
 
@@ -248,6 +249,9 @@ class _AddBookScreenState extends State<AddBookScreen> {
     );
 
     context.read<BookBloc>().add(AddBook(book));
+    
+    // Track book added for interstitial ad logic
+    context.read<AdBloc>().add(const BookAdded());
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

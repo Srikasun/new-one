@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/themes/app_colors.dart';
 import '../../data/models/book_model.dart';
+import '../bloc/ad/ad_bloc.dart';
 import '../bloc/book/book_bloc.dart';
+import '../bloc/purchase/purchase_bloc.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/monetization/monetization.dart';
 
 /// Home screen displaying the user's book library
 class HomeScreen extends StatefulWidget {
@@ -35,6 +38,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _tabController.addListener(_onTabChanged);
     // Load books when screen initializes
     context.read<BookBloc>().add(const LoadBooks());
+    // Initialize ads for non-premium users
+    context.read<AdBloc>().add(const InitializeAds());
+    // Check temporary premium status
+    context.read<AdBloc>().add(const CheckTemporaryPremium());
   }
 
   @override
@@ -56,6 +63,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     } else {
       context.read<BookBloc>().add(LoadBooksByStatus(_activeFilter!));
     }
+  }
+
+  void _checkBookLimitAndNavigate(BuildContext context, int bookCount, String route) {
+    // Check if user has reached book limit
+    context.read<PurchaseBloc>().add(CheckBookLimit(currentBookCount: bookCount));
+    
+    // Navigate after checking - the actual limit enforcement is handled in add book screen
+    context.go(route);
   }
 
   @override
@@ -84,57 +99,90 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
       ),
-      body: BlocBuilder<BookBloc, BookState>(
-        builder: (context, state) {
-          if (state is BookLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          if (state is BookError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppColors.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading books',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(state.message),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () =>
-                        context.read<BookBloc>().add(const LoadBooks()),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (state is BooksLoaded) {
-            if (state.books.isEmpty) {
-              return _buildEmptyState(context);
-            }
-
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<BookBloc>().add(const LoadBooks());
+      body: Column(
+        children: [
+          // Temporary premium banner
+          BlocBuilder<AdBloc, AdState>(
+            builder: (context, adState) {
+              if (adState is TemporaryPremiumActive) {
+                return TemporaryPremiumBanner(expiresAt: adState.expiresAt);
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          // Main content
+          Expanded(
+            child: BlocConsumer<PurchaseBloc, PurchaseState>(
+              listener: (context, purchaseState) {
+                if (purchaseState is BookLimitChecked && purchaseState.isLimitReached) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => BookLimitDialog(
+                      currentCount: purchaseState.currentCount,
+                      maxBooks: purchaseState.maxBooks,
+                    ),
+                  );
+                }
               },
-              child: _buildBooksList(context, state),
-            );
-          }
+              builder: (context, purchaseState) {
+                return BlocBuilder<BookBloc, BookState>(
+                  builder: (context, state) {
+                    if (state is BookLoading) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
 
-          return const SizedBox.shrink();
-        },
+                    if (state is BookError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: AppColors.error,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading books',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(state.message),
+                            const SizedBox(height: 24),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  context.read<BookBloc>().add(const LoadBooks()),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (state is BooksLoaded) {
+                      if (state.books.isEmpty) {
+                        return _buildEmptyState(context);
+                      }
+
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          context.read<BookBloc>().add(const LoadBooks());
+                        },
+                        child: _buildBooksList(context, state),
+                      );
+                    }
+
+                    return const SizedBox.shrink();
+                  },
+                );
+              },
+            ),
+          ),
+          // Banner ad for free users
+          const BannerAdWidget(),
+        ],
       ),
       floatingActionButton: _buildFAB(context),
       bottomNavigationBar: BottomNavigationBar(
@@ -188,6 +236,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _showAddOptions(BuildContext context) {
+    final bookState = context.read<BookBloc>().state;
+    final bookCount = bookState is BooksLoaded ? bookState.books.length : 0;
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -221,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 subtitle: 'Quickly add a book by scanning its barcode',
                 onTap: () {
                   Navigator.pop(context);
-                  context.go(RouteNames.scanBook);
+                  _checkBookLimitAndNavigate(context, bookCount, RouteNames.scanBook);
                 },
               ),
               const SizedBox(height: 12),
@@ -231,7 +282,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 subtitle: 'Find a book from Google Books',
                 onTap: () {
                   Navigator.pop(context);
-                  context.go(RouteNames.search);
+                  _checkBookLimitAndNavigate(context, bookCount, RouteNames.search);
                 },
               ),
               const SizedBox(height: 12),
@@ -241,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 subtitle: 'Enter book details yourself',
                 onTap: () {
                   Navigator.pop(context);
-                  context.go(RouteNames.addBook);
+                  _checkBookLimitAndNavigate(context, bookCount, RouteNames.addBook);
                 },
               ),
             ],

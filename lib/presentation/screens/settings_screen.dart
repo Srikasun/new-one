@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/themes/app_colors.dart';
+import '../bloc/purchase/purchase_bloc.dart';
 
 /// Settings screen for app configuration
 class SettingsScreen extends StatefulWidget {
@@ -127,43 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Premium section
           _buildSectionHeader('Premium'),
-          Card(
-            margin: const EdgeInsets.all(16),
-            color: AppColors.accent.withOpacity(0.1),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: AppColors.accent),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Upgrade to Premium',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('• Remove all ads'),
-                  const Text('• Cloud backup & sync'),
-                  const Text('• Advanced statistics'),
-                  const Text('• Unlimited goals'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.go(RouteNames.premium),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                    ),
-                    child: const Text('Learn More'),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          _buildPremiumSection(context),
 
           const Divider(),
 
@@ -319,6 +285,107 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPremiumSection(BuildContext context) {
+    return BlocBuilder<PurchaseBloc, PurchaseState>(
+      builder: (context, state) {
+        bool isPremium = false;
+        if (state is ProductsLoaded) {
+          isPremium = state.isPremium;
+        } else if (state is PremiumStatusChecked) {
+          isPremium = state.isPremium;
+        }
+
+        if (isPremium) {
+          // Premium user - show status
+          return Card(
+            margin: const EdgeInsets.all(16),
+            color: AppColors.success.withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.verified, color: AppColors.success),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Premium Active',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.success,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('✓ All ads removed'),
+                  const Text('✓ Unlimited books'),
+                  const Text('✓ Cloud backup & sync'),
+                  const Text('✓ Advanced statistics'),
+                  const Text('✓ All themes unlocked'),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Free user - show upgrade prompt
+        return Card(
+          margin: const EdgeInsets.all(16),
+          color: AppColors.accent.withOpacity(0.1),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.star, color: AppColors.accent),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Upgrade to Premium',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text('• Remove all ads'),
+                const Text('• Unlimited books (Free: ${PurchaseConstants.freeUserBookLimit})'),
+                const Text('• Cloud backup & sync'),
+                const Text('• Advanced statistics'),
+                const Text('• All themes unlocked'),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => context.go(RouteNames.premium),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.accent,
+                        ),
+                        child: const Text('Upgrade Now'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    TextButton(
+                      onPressed: () {
+                        context.read<PurchaseBloc>().add(const RestorePurchases());
+                      },
+                      child: const Text('Restore'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -61,3 +61,13 @@ class PurchaseFailed extends PurchaseEvent {
 class CheckPremiumStatus extends PurchaseEvent {
   const CheckPremiumStatus();
 }
+
+/// Event to check book limit for free users
+class CheckBookLimit extends PurchaseEvent {
+  final int currentBookCount;
+
+  const CheckBookLimit({required this.currentBookCount});
+
+  @override
+  List<Object?> get props => [currentBookCount];
+}

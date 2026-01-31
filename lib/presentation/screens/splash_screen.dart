@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/themes/app_colors.dart';
+import '../../data/repositories/preferences_repository.dart';
 
 /// Splash screen shown on app startup
 class SplashScreen extends StatefulWidget {
@@ -43,15 +45,32 @@ class _SplashScreenState extends State<SplashScreen>
     ));
 
     _controller.forward();
-    _navigateToHome();
+    _navigateToNextScreen();
   }
 
-  Future<void> _navigateToHome() async {
+  Future<void> _navigateToNextScreen() async {
     // Simulate initialization time
     await Future.delayed(const Duration(seconds: 2));
 
-    if (mounted) {
-      context.go(RouteNames.home);
+    if (!mounted) return;
+
+    // Check if onboarding is completed
+    try {
+      final prefsRepo = context.read<PreferencesRepository>();
+      final prefs = await prefsRepo.getPreferences();
+
+      if (mounted) {
+        if (prefs.hasCompletedOnboarding) {
+          context.go(RouteNames.home);
+        } else {
+          context.go(RouteNames.onboarding);
+        }
+      }
+    } catch (e) {
+      // On error, go to home
+      if (mounted) {
+        context.go(RouteNames.home);
+      }
     }
   }
 

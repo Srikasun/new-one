@@ -6,6 +6,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../data/repositories/preferences_repository.dart';
+import '../ad/ad_bloc.dart';
 
 part 'purchase_event.dart';
 part 'purchase_state.dart';
@@ -13,12 +14,17 @@ part 'purchase_state.dart';
 /// BLoC for managing in-app purchases
 class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
   final PreferencesRepository _preferencesRepository;
+  final AdBloc? _adBloc;
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
 
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
+  List<ProductDetails> _cachedProducts = [];
 
-  PurchaseBloc({required PreferencesRepository preferencesRepository})
-      : _preferencesRepository = preferencesRepository,
+  PurchaseBloc({
+    required PreferencesRepository preferencesRepository,
+    AdBloc? adBloc,
+  })  : _preferencesRepository = preferencesRepository,
+        _adBloc = adBloc,
         super(const PurchaseInitial()) {
     on<InitializePurchases>(_onInitializePurchases);
     on<LoadProducts>(_onLoadProducts);
@@ -27,7 +33,11 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
     on<PurchaseCompleted>(_onPurchaseCompleted);
     on<PurchaseFailed>(_onPurchaseFailed);
     on<CheckPremiumStatus>(_onCheckPremiumStatus);
+    on<CheckBookLimit>(_onCheckBookLimit);
   }
+
+  /// Get cached products
+  List<ProductDetails> get products => _cachedProducts;
 
   Future<void> _onInitializePurchases(
     InitializePurchases event,
@@ -75,7 +85,7 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
         return;
       }
 
-      final products = response.productDetails.map((product) {
+      _cachedProducts = response.productDetails.map((product) {
         return ProductDetails(
           id: product.id,
           title: product.title,
@@ -90,7 +100,7 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
       final preferences = await _preferencesRepository.getPreferences();
 
       emit(ProductsLoaded(
-        products: products,
+        products: _cachedProducts,
         isPremium: preferences.isPremiumActive,
       ));
     } catch (e) {
@@ -133,12 +143,22 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
     RestorePurchases event,
     Emitter<PurchaseState> emit,
   ) async {
-    emit(const PurchaseLoading());
+    emit(const RestoreInProgress());
 
     try {
       await _inAppPurchase.restorePurchases();
+      
+      // Wait a bit for purchases to be processed
+      await Future.delayed(const Duration(seconds: 2));
+      
+      final preferences = await _preferencesRepository.getPreferences();
+      
+      emit(PurchasesRestored(
+        restoredCount: preferences.isPremiumActive ? 1 : 0,
+        isPremium: preferences.isPremiumActive,
+      ));
     } catch (e) {
-      emit(PurchaseError(e.toString()));
+      emit(PurchaseError('Failed to restore purchases: ${e.toString()}'));
     }
   }
 
@@ -157,6 +177,9 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
             : null,
       );
 
+      // Hide ads
+      _adBloc?.add(const HideAds());
+
       emit(PurchaseSuccess(productId: event.productId));
 
       // Reload products to update premium status
@@ -170,7 +193,11 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
     PurchaseFailed event,
     Emitter<PurchaseState> emit,
   ) {
-    emit(PurchaseError(event.error));
+    if (event.error.toLowerCase().contains('cancel')) {
+      emit(const PurchaseCanceled());
+    } else {
+      emit(PurchaseError(event.error));
+    }
   }
 
   Future<void> _onCheckPremiumStatus(
@@ -183,6 +210,35 @@ class PurchaseBloc extends Bloc<PurchaseEvent, PurchaseState> {
       emit(PremiumStatusChecked(
         isPremium: preferences.isPremiumActive,
         expiryDate: preferences.premiumExpiryDate,
+      ));
+    } catch (e) {
+      emit(PurchaseError(e.toString()));
+    }
+  }
+
+  Future<void> _onCheckBookLimit(
+    CheckBookLimit event,
+    Emitter<PurchaseState> emit,
+  ) async {
+    try {
+      final preferences = await _preferencesRepository.getPreferences();
+      
+      if (preferences.isPremiumActive) {
+        emit(const BookLimitChecked(
+          isLimitReached: false,
+          currentCount: 0,
+          maxBooks: -1, // Unlimited
+        ));
+        return;
+      }
+
+      // Check current book count
+      final isLimitReached = event.currentBookCount >= PurchaseConstants.freeUserBookLimit;
+      
+      emit(BookLimitChecked(
+        isLimitReached: isLimitReached,
+        currentCount: event.currentBookCount,
+        maxBooks: PurchaseConstants.freeUserBookLimit,
       ));
     } catch (e) {
       emit(PurchaseError(e.toString()));

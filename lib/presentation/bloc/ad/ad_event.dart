@@ -18,6 +18,11 @@ class LoadBannerAd extends AdEvent {
   const LoadBannerAd();
 }
 
+/// Event to dispose banner ad
+class DisposeBannerAd extends AdEvent {
+  const DisposeBannerAd();
+}
+
 /// Event to load an interstitial ad
 class LoadInterstitialAd extends AdEvent {
   const LoadInterstitialAd();
@@ -65,4 +70,31 @@ class DisposeAds extends AdEvent {
 /// Event when user action occurs (for ad frequency tracking)
 class UserActionOccurred extends AdEvent {
   const UserActionOccurred();
+}
+
+/// Event when a book is added
+class BookAdded extends AdEvent {
+  const BookAdded();
+}
+
+/// Event when a book is marked as complete
+class BookCompleted extends AdEvent {
+  const BookCompleted();
+}
+
+/// Event to grant temporary premium access
+class GrantTemporaryPremium extends AdEvent {
+  final Duration duration;
+
+  const GrantTemporaryPremium({
+    this.duration = const Duration(hours: 24),
+  });
+
+  @override
+  List<Object?> get props => [duration];
+}
+
+/// Event to check if temporary premium is still active
+class CheckTemporaryPremium extends AdEvent {
+  const CheckTemporaryPremium();
 }

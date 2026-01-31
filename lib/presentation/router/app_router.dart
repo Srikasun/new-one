@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../data/models/book_model.dart';
 import '../screens/screens.dart';
 
 /// App router configuration using go_router
@@ -17,6 +18,13 @@ class AppRouter {
         path: RouteNames.splash,
         name: 'splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+
+      // Onboarding Screen
+      GoRoute(
+        path: RouteNames.onboarding,
+        name: 'onboarding',
+        builder: (context, state) => const OnboardingScreen(),
       ),
 
       // Home Screen
@@ -40,7 +48,10 @@ class AppRouter {
       GoRoute(
         path: RouteNames.addBook,
         name: 'addBook',
-        builder: (context, state) => const AddBookScreen(),
+        builder: (context, state) {
+          final initialBook = state.extra as BookModel?;
+          return AddBookScreen(initialBook: initialBook);
+        },
       ),
 
       // Edit Book Screen
@@ -57,7 +68,7 @@ class AppRouter {
       GoRoute(
         path: RouteNames.scanBook,
         name: 'scanBook',
-        builder: (context, state) => const ScanBookScreen(),
+        builder: (context, state) => const ScannerScreen(),
       ),
 
       // Statistics Screen
@@ -93,6 +104,27 @@ class AppRouter {
         path: RouteNames.search,
         name: 'search',
         builder: (context, state) => const SearchScreen(),
+      ),
+
+      // Collections Screen (Premium)
+      GoRoute(
+        path: RouteNames.collections,
+        name: 'collections',
+        builder: (context, state) => const CollectionsScreen(),
+      ),
+
+      // Achievements Screen
+      GoRoute(
+        path: RouteNames.achievements,
+        name: 'achievements',
+        builder: (context, state) => const AchievementsScreen(),
+      ),
+
+      // Themes Screen (Premium)
+      GoRoute(
+        path: RouteNames.themes,
+        name: 'themes',
+        builder: (context, state) => const ThemesScreen(),
       ),
     ],
 
@@ -179,6 +211,26 @@ class AppRouter {
   /// Navigate to search
   static void goToSearch(BuildContext context) {
     context.go(RouteNames.search);
+  }
+
+  /// Navigate to collections
+  static void goToCollections(BuildContext context) {
+    context.go(RouteNames.collections);
+  }
+
+  /// Navigate to achievements
+  static void goToAchievements(BuildContext context) {
+    context.go(RouteNames.achievements);
+  }
+
+  /// Navigate to themes
+  static void goToThemes(BuildContext context) {
+    context.go(RouteNames.themes);
+  }
+
+  /// Navigate to onboarding
+  static void goToOnboarding(BuildContext context) {
+    context.go(RouteNames.onboarding);
   }
 
   /// Go back

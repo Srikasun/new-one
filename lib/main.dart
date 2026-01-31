@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/core.dart';
@@ -11,6 +12,9 @@ import 'presentation/router/app_router.dart';
 /// Main entry point for DreamShelf app
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Google Mobile Ads SDK
+  await MobileAds.instance.initialize();
 
   // Initialize Hive
   await _initializeHive();
@@ -140,6 +144,7 @@ class DreamShelfApp extends StatelessWidget {
           BlocProvider<PurchaseBloc>(
             create: (context) => PurchaseBloc(
               preferencesRepository: repositories.preferencesRepository,
+              adBloc: context.read<AdBloc>(),
             )..add(const InitializePurchases()),
           ),
         ],

@@ -29,8 +29,6 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-*.g.dart
-*.freezed.dart
 
 # Platform related
 **/android/.gradle/
@@ -50,7 +48,3 @@ coverage/
 
 # Dependency directories
 node_modules/
-
-# Generated files
-lib/**/*.g.dart
-lib/**/*.freezed.dart
